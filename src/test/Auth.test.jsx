@@ -156,6 +156,41 @@ describe('Landing page', () => {
   })
 })
 
+describe('Protected routes', () => {
+  it('redirects unauthenticated users from /places to landing', () => {
+    renderApp('/places')
+    expect(screen.queryByText(/explore and share/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument()
+  })
+
+  it('redirects unauthenticated users from /profile to landing', () => {
+    renderApp('/profile')
+    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument()
+  })
+
+  it('shows places page for authenticated users', async () => {
+    localStorage.setItem('access_token', 'fake-token')
+    api.get.mockResolvedValueOnce({
+      data: { id: 1, username: 'alice', email: 'alice@test.com' },
+    })
+
+    renderApp('/places')
+
+    await waitFor(() => {
+      expect(screen.getByText(/explore and share/i)).toBeInTheDocument()
+    })
+  })
+
+  it('landing page is always public', () => {
+    renderApp('/')
+    expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /register/i })).toBeInTheDocument()
+  })
+})
+
 describe('Navbar auth state', () => {
   it('shows Profile and Logout after login', async () => {
     api.post.mockResolvedValueOnce({

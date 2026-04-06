@@ -24,7 +24,7 @@ function Register() {
     setLoading(true)
     try {
       await register(username, email, password)
-      navigate('/')
+      navigate('/places')
     } catch (err) {
       const data = err.response?.data
       if (data && typeof data === 'object') {

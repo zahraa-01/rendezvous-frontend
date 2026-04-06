@@ -13,7 +13,7 @@ function Navbar() {
   return (
     <nav className={`navbar${isAuthenticated ? ' authenticated' : ''}`}>
       {isAuthenticated && (
-        <Link to="/" className="navbar-brand">Rendezvous</Link>
+        <Link to="/places" className="navbar-brand">Rendezvous</Link>
       )}
       <div className="navbar-links">
         {isAuthenticated ? (

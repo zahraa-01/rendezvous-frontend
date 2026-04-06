@@ -16,7 +16,7 @@ function Login() {
     setLoading(true)
     try {
       await login(username, password)
-      navigate('/')
+      navigate('/places')
     } catch (err) {
       const data = err.response?.data
       setError(
