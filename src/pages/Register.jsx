@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function Register() {
@@ -7,11 +7,38 @@ function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const { login } = useAuth()
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+  const { register } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    login()
+    setErrors({})
+
+    if (password !== confirmPassword) {
+      setErrors({ confirm: 'Passwords do not match.' })
+      return
+    }
+
+    setLoading(true)
+    try {
+      await register(username, email, password)
+      navigate('/')
+    } catch (err) {
+      const data = err.response?.data
+      if (data && typeof data === 'object') {
+        const fieldErrors = {}
+        for (const [key, value] of Object.entries(data)) {
+          fieldErrors[key] = Array.isArray(value) ? value[0] : value
+        }
+        setErrors(fieldErrors)
+      } else {
+        setErrors({ general: 'Registration failed. Please try again.' })
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -20,6 +47,7 @@ function Register() {
       <p className="auth-subtitle">Start exploring the world your way</p>
       <div className="auth-card">
         <form className="auth-form" onSubmit={handleSubmit}>
+          {errors.general && <p className="auth-error">{errors.general}</p>}
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
@@ -30,6 +58,7 @@ function Register() {
               placeholder="Choose a username"
               required
             />
+            {errors.username && <p className="field-error">{errors.username}</p>}
           </div>
 
           <div className="form-group">
@@ -42,6 +71,7 @@ function Register() {
               placeholder="Enter your email"
               required
             />
+            {errors.email && <p className="field-error">{errors.email}</p>}
           </div>
 
           <div className="form-group">
@@ -54,6 +84,7 @@ function Register() {
               placeholder="Create a password"
               required
             />
+            {errors.password && <p className="field-error">{errors.password}</p>}
           </div>
 
           <div className="form-group">
@@ -66,9 +97,12 @@ function Register() {
               placeholder="Confirm your password"
               required
             />
+            {errors.confirm && <p className="field-error">{errors.confirm}</p>}
           </div>
 
-          <button type="submit">Register</button>
+          <button type="submit" disabled={loading}>
+            {loading ? 'Creating account…' : 'Register'}
+          </button>
         </form>
         <p className="auth-switch">
           Already have an account? <Link to="/login">Log in</Link>

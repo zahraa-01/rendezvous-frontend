@@ -1,7 +1,27 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../context/AuthContext'
 import App from '../App'
+import { vi } from 'vitest'
+
+vi.mock('../api/client', () => {
+  const mockApi = {
+    post: vi.fn(),
+    get: vi.fn(),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+  }
+  return { default: mockApi }
+})
+
+import api from '../api/client'
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  localStorage.clear()
+})
 
 function renderApp(route = '/') {
   return render(
@@ -27,6 +47,42 @@ describe('Login page', () => {
     fireEvent.change(usernameInput, { target: { value: 'alice' } })
     expect(usernameInput.value).toBe('alice')
   })
+
+  it('calls API on form submit', async () => {
+    api.post.mockResolvedValueOnce({
+      data: { access: 'fake-access', refresh: 'fake-refresh' },
+    })
+    api.get.mockResolvedValueOnce({
+      data: { id: 1, username: 'alice', email: 'alice@test.com' },
+    })
+
+    renderApp('/login')
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'alice' } })
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'pass123' } })
+    fireEvent.click(screen.getByRole('button', { name: /log in/i }))
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/auth/token/', {
+        username: 'alice',
+        password: 'pass123',
+      })
+    })
+  })
+
+  it('shows error on failed login', async () => {
+    api.post.mockRejectedValueOnce({
+      response: { data: { detail: 'No active account found with the given credentials' } },
+    })
+
+    renderApp('/login')
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'alice' } })
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrong' } })
+    fireEvent.click(screen.getByRole('button', { name: /log in/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/no active account/i)).toBeInTheDocument()
+    })
+  })
 })
 
 describe('Register page', () => {
@@ -44,6 +100,36 @@ describe('Register page', () => {
     const emailInput = screen.getByLabelText(/email/i)
     fireEvent.change(emailInput, { target: { value: 'alice@example.com' } })
     expect(emailInput.value).toBe('alice@example.com')
+  })
+
+  it('shows error when passwords do not match', async () => {
+    renderApp('/register')
+    fireEvent.change(screen.getByLabelText(/^username/i), { target: { value: 'alice' } })
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'a@b.com' } })
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'Pass123!' } })
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Different!' } })
+    fireEvent.click(screen.getByRole('button', { name: /register/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument()
+    })
+  })
+
+  it('shows field error from API', async () => {
+    api.post.mockRejectedValueOnce({
+      response: { data: { email: ['A user with that email already exists.'] } },
+    })
+
+    renderApp('/register')
+    fireEvent.change(screen.getByLabelText(/^username/i), { target: { value: 'alice' } })
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'a@b.com' } })
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'Pass123!' } })
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Pass123!' } })
+    fireEvent.click(screen.getByRole('button', { name: /register/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/email already exists/i)).toBeInTheDocument()
+    })
   })
 })
 
@@ -71,12 +157,22 @@ describe('Landing page', () => {
 })
 
 describe('Navbar auth state', () => {
-  it('shows Profile and Logout after login', () => {
+  it('shows Profile and Logout after login', async () => {
+    api.post.mockResolvedValueOnce({
+      data: { access: 'fake-access', refresh: 'fake-refresh' },
+    })
+    api.get.mockResolvedValueOnce({
+      data: { id: 1, username: 'alice', email: 'alice@test.com' },
+    })
+
     renderApp('/login')
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'alice' } })
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'pass' } })
     fireEvent.click(screen.getByRole('button', { name: /log in/i }))
-    expect(screen.getByRole('link', { name: /profile/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: /profile/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument()
+    })
   })
 })

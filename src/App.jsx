@@ -47,6 +47,7 @@ function App() {
                 </div>
               }
             />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
       )}

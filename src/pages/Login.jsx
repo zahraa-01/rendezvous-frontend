@@ -1,15 +1,32 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    login()
+    setError('')
+    setLoading(true)
+    try {
+      await login(username, password)
+      navigate('/')
+    } catch (err) {
+      const data = err.response?.data
+      setError(
+        data?.detail ||
+        data?.non_field_errors?.[0] ||
+        'Invalid credentials. Please try again.'
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -18,6 +35,7 @@ function Login() {
       <p className="auth-subtitle">Log in to continue your journey</p>
       <div className="auth-card">
         <form className="auth-form" onSubmit={handleSubmit}>
+          {error && <p className="auth-error">{error}</p>}
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
@@ -42,7 +60,9 @@ function Login() {
             />
           </div>
 
-          <button type="submit">Log in</button>
+          <button type="submit" disabled={loading}>
+            {loading ? 'Logging in…' : 'Log in'}
+          </button>
         </form>
         <p className="auth-switch">
           Don&apos;t have an account? <Link to="/register">Register</Link>
