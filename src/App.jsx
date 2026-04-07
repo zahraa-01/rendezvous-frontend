@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Profile from './pages/Profile'
+import Places from './pages/Places'
 import { useAuth } from './context/AuthContext'
 import './App.css'
 
@@ -57,12 +58,7 @@ function App() {
         element={
           <ProtectedRoute>
             <Navbar />
-            <main className="main-content">
-              <div className="home-page">
-                <h1>Places</h1>
-                <p>Explore and share your favourite places.</p>
-              </div>
-            </main>
+            <Places />
           </ProtectedRoute>
         }
       />
