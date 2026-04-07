@@ -467,6 +467,21 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.delete-place-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  font-family: var(--sans);
+}
+
+.delete-place-btn:hover {
+  background: rgba(255, 68, 68, 0.2);
+}
+
 /* Place Detail Modal */
 .place-detail-modal {
   position: fixed !important;

@@ -87,6 +87,7 @@ function Places() {
       console.log('Fetching places with params:', params.toString())
       const response = await api.get(`/places/?${params.toString()}`)
       console.log('Places response:', response.data)
+      console.log('Number of places:', response.data.results?.length || 0)
       setPlaces(response.data.results)
       setError('')
     } catch (err) {
@@ -168,6 +169,22 @@ function Places() {
       }
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleDeletePlace = async (place) => {
+    if (!window.confirm(`Are you sure you want to delete "${place.name}"? This action cannot be undone.`)) {
+      return
+    }
+    
+    try {
+      await api.delete(`/places/${place.id}/`)
+      // Remove the place from the places array
+      setPlaces(places.filter(p => p.id !== place.id))
+      setError('')
+    } catch (err) {
+      console.error('Failed to delete place:', err)
+      setError('Failed to delete place')
     }
   }
 
@@ -532,16 +549,28 @@ function Places() {
                     {new Date(place.created_at).toLocaleDateString()}
                   </span>
                   {user && place.owner === user.username && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleEditPlace(place)
-                      }}
-                      className="edit-place-btn"
-                      style={{ color: theme.primary }}
-                    >
-                      Edit
-                    </button>
+                    <>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditPlace(place)
+                        }}
+                        className="edit-place-btn"
+                        style={{ color: theme.primary }}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeletePlace(place)
+                        }}
+                        className="delete-place-btn"
+                        style={{ color: '#ff4444' }}
+                      >
+                        Delete
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
