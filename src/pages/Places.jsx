@@ -92,6 +92,12 @@ function Places() {
     }
   }
 
+  const clearFilters = () => {
+    setSearch('')
+    setCityFilter('')
+    setCountryFilter('')
+  }
+
   const handleCreatePlace = async () => {
     if (!formData.name.trim() || !formData.city.trim() || !formData.country.trim() || !formData.description.trim()) {
       setError('Please fill in all required fields')
@@ -236,6 +242,9 @@ function Places() {
               <option key={country} value={country}>{country}</option>
             ))}
           </select>
+          <button onClick={clearFilters} className="clear-filters-btn">
+            Clear All
+          </button>
         </div>
         
         {user && (
