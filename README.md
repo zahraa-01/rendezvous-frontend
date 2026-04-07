@@ -1,16 +1,79 @@
-# React + Vite
+# Rendezvous Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
+Rendezvous is a location-sharing application where users can discover, create, and manage places with authentic stories from locals and travellers. This repository contains the React frontend application.
 
-Currently, two official plugins are available:
+## Tech Stack
+- React 18 with Vite
+- React Router for navigation
+- Axios for API calls
+- JWT authentication
+- CSS with custom styling
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
+- User authentication (login, register)
+- Browse and search places
+- Create, edit, and delete your own places
+- Image uploads for places and profile avatars
+- User profile management
+- Protected routes for authenticated pages
+- Responsive design
 
-## React Compiler
+## Routing
+- `/` - Landing page
+- `/login` - User login
+- `/register` - User registration
+- `/places` - Main places page (auth required)
+- `/profile` - User profile (auth required)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup Instructions
 
-## Expanding the ESLint configuration
+1. **Install dependencies**
+```bash
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. **Environment setup**
+Create a `.env` file with:
+```
+VITE_API_URL=http://localhost:8000/api
+```
+
+3. **Start development server**
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`
+
+## Project Structure
+```
+src/
+|-- components/       # Navbar, ProtectedRoute
+|-- context/          # AuthContext for global auth state
+|-- pages/            # Landing, Login, Register, Places, Profile
+|-- api/              # Axios client configuration
+|-- App.css           # Global styles
+```
+
+## Authentication Flow
+- User logs in via `/login`
+- JWT tokens are stored in localStorage
+- Tokens are automatically refreshed when needed
+- Protected routes require authentication
+- Logout clears tokens and redirects to the login page
+
+## Known Issues & Dependencies
+- Requires backend API running at the configured URL
+- CORS must be configured correctly on the backend
+- Authentication tokens are stored in localStorage
+
+## Build & Deploy
+```bash
+npm run build    # Production build
+npm run preview  # Preview production build
+npm run lint     # Code linting
+```
+
+## AI Assistance Disclaimer
+AI tools were used selectively during development to support parts of the UI design, README drafting, debugging, and troubleshooting. This was especially helpful when investigating SendGrid delivery issues and exploring password reset implementation. All final integration, testing, and implementation decisions were reviewed and validated within the project context.
