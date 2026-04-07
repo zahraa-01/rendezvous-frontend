@@ -452,6 +452,21 @@
   opacity: 0.8;
 }
 
+.edit-place-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  font-family: var(--sans);
+}
+
+.edit-place-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* Place Detail Modal */
 .place-detail-modal {
   position: fixed !important;

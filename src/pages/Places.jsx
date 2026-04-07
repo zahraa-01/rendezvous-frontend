@@ -41,6 +41,10 @@ function Places() {
   const [theme, setTheme] = useState(gradients[0])
   const [selectedPlace, setSelectedPlace] = useState(null)
 
+  // Edit state
+  const [editingPlace, setEditingPlace] = useState(null)
+  const [showEditForm, setShowEditForm] = useState(false)
+
   // Create form state
   const [formData, setFormData] = useState({
     name: '',
@@ -78,6 +82,7 @@ function Places() {
       if (search) params.append('search', search)
       if (cityFilter) params.append('city', cityFilter)
       if (countryFilter) params.append('country', countryFilter)
+      params.append('ordering', '-created_at') // Show newest first
       
       console.log('Fetching places with params:', params.toString())
       const response = await api.get(`/places/?${params.toString()}`)
@@ -96,6 +101,74 @@ function Places() {
     setSearch('')
     setCityFilter('')
     setCountryFilter('')
+  }
+
+  const handleEditPlace = (place) => {
+    setEditingPlace(place)
+    setFormData({
+      name: place.name,
+      city: place.city,
+      country: place.country,
+      description: place.description
+    })
+    setShowEditForm(true)
+    setShowCreateForm(false)
+  }
+
+  const handleUpdatePlace = async () => {
+    if (!formData.name.trim() || !formData.city.trim() || !formData.country.trim() || !formData.description.trim()) {
+      setError('Please fill in all required fields')
+      return
+    }
+    
+    if (formData.description.length > 1000) {
+      setError('Description must be less than 1000 characters')
+      return
+    }
+    
+    try {
+      setCreating(true)
+      const formDataToSend = new FormData()
+      formDataToSend.append('name', formData.name)
+      formDataToSend.append('city', formData.city)
+      formDataToSend.append('country', formData.country)
+      formDataToSend.append('description', formData.description)
+      if (imageFile) {
+        formDataToSend.append('image', imageFile)
+      }
+      
+      const response = await api.patch(`/places/${editingPlace.id}/`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      
+      // Update the place in the places array
+      setPlaces(places.map(place => 
+        place.id === editingPlace.id ? response.data : place
+      ))
+      
+      // Reset edit form
+      setEditingPlace(null)
+      setFormData({ name: '', city: '', country: '', description: '' })
+      setImageFile(null)
+      setShowEditForm(false)
+      setError('')
+    } catch (err) {
+      console.error('Failed to update place:', err)
+      if (err.response?.data) {
+        const errorData = err.response.data
+        if (typeof errorData === 'string') {
+          setError(errorData)
+        } else {
+          setError(Object.values(errorData).flat().join(', '))
+        }
+      } else {
+        setError('Failed to update place')
+      }
+    } finally {
+      setCreating(false)
+    }
   }
 
   const handleCreatePlace = async () => {
@@ -259,12 +332,20 @@ function Places() {
 
       {/* Create Place Form */}
       {showCreateForm && (
-        <div className="create-place-form auth-card">
-          {/* Error Display */}
-          {error && <div className="error-message">{error}</div>}
-          
-          <h3>Add New Place</h3>
-          <div className="form-grid">
+        <div className="place-detail-modal" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowCreateForm(false)
+            setFormData({ name: '', city: '', country: '', description: '' })
+            setImageFile(null)
+            setError('')
+          }
+        }}>
+          <div className="create-place-form auth-card" onClick={(e) => e.stopPropagation()}>
+            {/* Error Display */}
+            {error && <div className="error-message">{error}</div>}
+            
+            <h3>Add New Place</h3>
+            <div className="form-grid">
             <input
               type="text"
               placeholder="Place Name *"
@@ -319,6 +400,91 @@ function Places() {
             <p className="image-preview">Selected: {imageFile.name}</p>
           )}
         </div>
+        </div>
+      )}
+
+      {/* Edit Place Form */}
+      {showEditForm && (
+        <div className="place-detail-modal" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowEditForm(false)
+            setEditingPlace(null)
+            setFormData({ name: '', city: '', country: '', description: '' })
+            setImageFile(null)
+            setError('')
+          }
+        }}>
+          <div className="create-place-form auth-card" onClick={(e) => e.stopPropagation()}>
+            {/* Error Display */}
+            {error && <div className="error-message">{error}</div>}
+            
+            <h3>Edit Place</h3>
+            <div className="form-grid">
+            <input
+              type="text"
+              placeholder="Place Name *"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="auth-input"
+            />
+            <input
+              type="text"
+              placeholder="City *"
+              value={formData.city}
+              onChange={(e) => setFormData({...formData, city: e.target.value})}
+              className="auth-input"
+            />
+            <input
+              type="text"
+              placeholder="Country *"
+              value={formData.country}
+              onChange={(e) => setFormData({...formData, country: e.target.value})}
+              className="auth-input"
+            />
+            <textarea
+              placeholder="Description *"
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              className="auth-input"
+              rows="4"
+              maxLength="1000"
+            />
+            <div className="char-count">
+              {formData.description.length}/1000 characters
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files[0])}
+              className="auth-input"
+            />
+            <div className="form-actions">
+              <button
+                onClick={handleUpdatePlace}
+                disabled={creating}
+                className="btn-primary"
+              >
+                {creating ? 'Updating...' : 'Update Place'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowEditForm(false)
+                  setEditingPlace(null)
+                  setFormData({ name: '', city: '', country: '', description: '' })
+                  setImageFile(null)
+                  setError('')
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+          {imageFile && (
+            <p className="image-preview">Selected: {imageFile.name}</p>
+          )}
+        </div>
+        </div>
       )}
 
       {/* Error Display for non-form errors */}
@@ -365,6 +531,18 @@ function Places() {
                   <span className="place-date" style={{ color: theme.accent }}>
                     {new Date(place.created_at).toLocaleDateString()}
                   </span>
+                  {user && place.owner === user.username && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEditPlace(place)
+                      }}
+                      className="edit-place-btn"
+                      style={{ color: theme.primary }}
+                    >
+                      Edit
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
