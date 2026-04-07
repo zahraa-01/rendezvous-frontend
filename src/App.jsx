@@ -3,6 +3,7 @@ import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Profile from './pages/Profile'
 import { useAuth } from './context/AuthContext'
 import './App.css'
 
@@ -71,10 +72,7 @@ function App() {
           <ProtectedRoute>
             <Navbar />
             <main className="main-content">
-              <div className="home-page">
-                <h1>Profile</h1>
-                <p>Profile page — coming soon!</p>
-              </div>
+              <Profile />
             </main>
           </ProtectedRoute>
         }
