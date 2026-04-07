@@ -58,7 +58,9 @@ function App() {
         element={
           <ProtectedRoute>
             <Navbar />
-            <Places />
+            <main className="main-content">
+              <Places />
+            </main>
           </ProtectedRoute>
         }
       />

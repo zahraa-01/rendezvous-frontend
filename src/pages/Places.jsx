@@ -34,10 +34,11 @@ function Places() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState('')
+  const [countryFilter, setCountryFilter] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [creating, setCreating] = useState(false)
   const [expandedCards, setExpandedCards] = useState(new Set())
-  const [theme, setTheme] = useState({})
+  const [theme, setTheme] = useState(gradients[0])
   const [selectedPlace, setSelectedPlace] = useState(null)
 
   // Create form state
@@ -59,7 +60,16 @@ function Places() {
     document.documentElement.style.setProperty('--theme-accent', selectedTheme.accent)
     
     fetchPlaces()
-  }, [search, cityFilter])
+  }, []) // Remove search and cityFilter dependencies to prevent background changes
+
+  // Extract unique cities and countries from places
+  const uniqueCities = places && Array.isArray(places) ? [...new Set(places.map(place => place.city))].sort() : []
+  const uniqueCountries = places && Array.isArray(places) ? [...new Set(places.map(place => place.country))].sort() : []
+
+  // Separate effect for search/filter changes
+  useEffect(() => {
+    fetchPlaces()
+  }, [search, cityFilter, countryFilter])
 
   const fetchPlaces = async () => {
     try {
@@ -67,9 +77,12 @@ function Places() {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
       if (cityFilter) params.append('city', cityFilter)
+      if (countryFilter) params.append('country', countryFilter)
       
+      console.log('Fetching places with params:', params.toString())
       const response = await api.get(`/places/?${params.toString()}`)
-      setPlaces(response.data.results || response.data)
+      console.log('Places response:', response.data)
+      setPlaces(response.data.results)
       setError('')
     } catch (err) {
       console.error('Failed to fetch places:', err)
@@ -187,7 +200,7 @@ function Places() {
   }
 
   return (
-    <div className="places-page" style={{ background: theme.bg }}>
+    <div className="places-page" style={{ background: theme?.bg || gradients[0].bg }}>
       <div className="places-header">
         <h1>Discover Places</h1>
         <p>Find your next rendezvous spot</p>
@@ -203,13 +216,26 @@ function Places() {
             onChange={(e) => setSearch(e.target.value)}
             className="search-input"
           />
-          <input
-            type="text"
-            placeholder="Filter by city..."
+          <select
             value={cityFilter}
             onChange={(e) => setCityFilter(e.target.value)}
             className="city-filter"
-          />
+          >
+            <option value="">All Cities</option>
+            {uniqueCities.map(city => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
+          <select
+            value={countryFilter}
+            onChange={(e) => setCountryFilter(e.target.value)}
+            className="country-filter"
+          >
+            <option value="">All Countries</option>
+            {uniqueCountries.map(country => (
+              <option key={country} value={country}>{country}</option>
+            ))}
+          </select>
         </div>
         
         {user && (
@@ -290,14 +316,14 @@ function Places() {
       {error && !showCreateForm && <div className="error-message">{error}</div>}
 
       {/* Places Grid */}
-      {places.length === 0 && !loading ? (
+      {(!places || places.length === 0) && !loading ? (
         <div className="empty-state">
           <h3>No places found</h3>
           <p>Try adjusting your search or be the first to add a place!</p>
         </div>
       ) : (
         <div className="places-grid">
-          {places.map(place => (
+          {places && Array.isArray(places) && places.map(place => (
             <div key={place.id} className="place-card" onClick={() => handlePlaceClick(place)}>
               {place.image && (
                 <div className="place-image">
